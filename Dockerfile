@@ -7,32 +7,32 @@ RUN apt-get update && \
 
 RUN apt-get install -y libxml2-dev openssl libssl-dev curl libcurl4-gnutls-dev libjpeg-dev libpng12-dev libfreetype6 libfreetype6-dev libmcrypt4 libmcrypt-dev
 
-RUN wget http://mirrors.sohu.com/php/php-7.0.16.tar.gz && \
-	tar zxvf php-7.0.16.tar.gz
+RUN apt-get install -y software-properties-common python-software-properties && \
+	add-apt-repository ppa:ondrej/php && \
+	apt-get update && \
+	apt-get -y --force-yes upgrade && \
+	apt-get install -y --force-yes php-zip
 
-RUN	cd php-7.0.16 && \
-	./configure --prefix=/usr/local/php \
-	--with-config-file-path=/usr/local/php/etc \ 
-	--enable-fpm --with-fpm-user=www-data \ 
-	--with-pdo-mysql=mysqlnd \ 
-	--with-libxml-dir --with-gd \ 
-	--with-jpeg-dir --with-png-dir \ 
-	--with-freetype-dir --with-iconv-dir --with-zlib-dir \ 
-	--with-mcrypt --enable-soap --enable-gd-native-ttf \ 
-	--enable-ftp --enable-mbstring --enable-exif --disable-ipv6 \ 
-	--with-pear --with-curl --with-openssl && \
-	make && make install
+# install php7.1
 
-RUN cd php-7.0.16 && \
-	cp php.ini-production /usr/local/php/etc/php.ini && \
-	cd /usr/local/php/etc && \
-	cp php-fpm.conf.default php-fpm.conf && \
-	cp php-fpm.d/www.conf.default php-fpm.d/www.conf
+RUN apt-get install -y --force-yes php7.1
+# install php extensions
 
-RUN groupadd nobody && /usr/local/php/sbin/php-fpm
+RUN apt-get install -y --force-yes php7.1-zip
+
+# install composer
+
+RUN cd /usr/local/bin && \
+	curl -s https://getcomposer.org/installer | php && \
+	chmod a+x composer.phar && \
+	mv composer.phar /usr/local/bin/composer && \
+	composer self-update
 
 
-ENV PATH $PATH:/usr/local/php/bin
+# install lavarel
+
+RUN composer global require "laravel/installer"
+ENV PATH $PATH:./root/.composer/vendor/bin/
 
 ADD keep_alive.sh /usr/local/bin
 RUN chmod +x /usr/local/bin/keep_alive.sh
